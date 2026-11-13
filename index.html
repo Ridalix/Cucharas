@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mis cucharas</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#c8742c"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#faf7f2;--card:#fff;--tx:#2b2620;--mu:#7a7064;--ac:#c8742c;--ac2:#f1dcc6;--bd:#e7dfd3;--bad:#b3261e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1815;--card:#26221e;--tx:#f1ebe3;--mu:#a39a8e;--ac:#e8954d;--ac2:#4a3524;--bd:#38322b;--bad:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1815;--card:#26221e;--tx:#f1ebe3;--mu:#a39a8e;--ac:#e8954d;--ac2:#4a3524;--bd:#38322b;--bad:#ff8a80;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:480px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 12px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin:22px 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px}
+.big{font-size:56px;font-weight:700;line-height:1;color:var(--ac)}.big small{font-size:22px;color:var(--mu);font-weight:500}
+.dots{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0}.dot{width:16px;height:16px;border-radius:50%;background:var(--ac)}.dot.off{background:var(--ac2)}.dot.neg{background:var(--bad)}
+.row{display:flex;align-items:center;gap:8px}.sp{flex:1}
+button{font:inherit;color:var(--tx);background:var(--ac2);border:0;border-radius:12px;padding:10px 14px;cursor:pointer}
+button.pri{background:var(--ac);color:#fff}button.x{background:none;color:var(--mu);padding:6px 10px}
+.act{display:flex;gap:6px;margin-bottom:8px}.act .use{flex:1;text-align:left;display:flex;justify-content:space-between}
+.item{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}.item:last-child{border:0}
+input{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;min-width:0}
+.mu{color:var(--mu);font-size:14px}
+</style></head><body><main>
+<h1>🥄 Mis cucharas</h1>
+<div class="card">
+  <div class="row"><div class="big" id="left"></div><span class="sp"></span>
+    <button id="m">−</button><button id="p">+</button></div>
+  <div class="mu" id="sub"></div><div class="dots" id="dots"></div>
+  <button id="reset">Empezar día nuevo</button>
+</div>
+<h2>Mis actividades (toca para gastar)</h2><div id="acts"></div>
+<div class="row"><input id="n" placeholder="Nueva actividad" class="sp"><input id="c" type="number" min="1" value="1" style="width:64px" inputmode="numeric"><button class="pri" id="add">Guardar</button></div>
+<h2>Gastado hoy</h2><div class="card" id="log"></div>
+<script>
+var KEY="cucharas-v1",today=new Date().toLocaleDateString("en-CA");
+var S={total:12,acts:[],log:[],date:today};
+try{var r=JSON.parse(localStorage.getItem(KEY));if(r&&r.acts)S=r}catch(e){}
+if(S.date!==today){S.log=[];S.date=today}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function render(){
+  var used=S.log.reduce(function(a,b){return a+b.cost},0),left=S.total-used;
+  var L=$("left");L.textContent=left;var s=el("small",0," / "+S.total);L.appendChild(s);
+  $("sub").textContent=left<0?"Te pasaste "+(-left)+" cuchara(s). Descansa si puedes.":"Te quedan "+left+" cucharas hoy";
+  var d=$("dots");d.textContent="";
+  for(var i=0;i<Math.max(S.total,used);i++){d.appendChild(el("div","dot"+(i>=S.total?" neg":i<left?"":" off")))}
+  var A=$("acts");A.textContent="";
+  if(!S.acts.length)A.appendChild(el("p","mu","Aún no tienes actividades. Agrega una abajo."));
+  S.acts.forEach(function(a){
+    var w=el("div","act"),b=el("button","use");b.appendChild(el("span",0,a.name));b.appendChild(el("span",0,a.cost+" 🥄"));
+    b.onclick=function(){S.log.push({id:Date.now()+Math.random(),name:a.name,cost:a.cost});save();render()};
+    var x=el("button","x","✕");x.onclick=function(){if(confirm("¿Borrar “"+a.name+"”?")){S.acts=S.acts.filter(function(z){return z!==a});save();render()}};
+    w.appendChild(b);w.appendChild(x);A.appendChild(w)});
+  var G=$("log");G.textContent="";
+  if(!S.log.length)G.appendChild(el("span","mu","Nada todavía."));
+  S.log.forEach(function(l){
+    var w=el("div","item");w.appendChild(el("span","sp",l.name));w.appendChild(el("span","mu",l.cost+" 🥄"));
+    var x=el("button","x","↩");x.onclick=function(){S.log=S.log.filter(function(z){return z!==l});save();render()};
+    w.appendChild(x);G.appendChild(w)});
+}
+$("add").onclick=function(){var n=$("n").value.trim(),c=parseInt($("c").value,10);
+  if(!n||!(c>0))return;S.acts.push({name:n,cost:c});$("n").value="";save();render()};
+$("m").onclick=function(){if(S.total>1){S.total--;save();render()}};
+$("p").onclick=function(){S.total++;save();render()};
+$("reset").onclick=function(){if(confirm("¿Borrar lo gastado de hoy?")){S.log=[];save();render()}};
+render();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){})}
+</script></main></body></html>
